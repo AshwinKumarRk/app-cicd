@@ -1,0 +1,224 @@
+provider "aws" {
+    profile = var.profile 
+    region = var.region
+}
+
+data "aws_iam_user" "ghactions" {
+  user_name = "ghactions-app"
+}
+
+resource "aws_iam_policy" "CodeDeploy-EC2-S3" {
+  name = "CodeDeploy-EC2-S3"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:Get*",
+                "s3:List*"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}/*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_user_policy" "GH-Upload-To-S3" {
+  name = "GH-Upload-To-S3"
+  user = "${data.aws_iam_user.ghactions.user_name}"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:Get*",
+                "s3:List*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}/*"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_user_policy" "GH-Code-Deploy" {
+  name = "GH-Code-Deploy"
+  user = "${data.aws_iam_user.ghactions.user_name}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:RegisterApplicationRevision",
+        "codedeploy:GetApplicationRevision"
+      ],
+      "Resource": [
+        "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:application:${var.CODE_DEPLOY_APPLICATION_NAME}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:CreateDeployment",
+        "codedeploy:GetDeployment"
+      ],
+      "Resource": [
+        "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:GetDeploymentConfig"
+      ],
+      "Resource": [
+        "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deploymentconfig:CodeDeployDefault.OneAtATime",
+        "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deploymentconfig:CodeDeployDefault.HalfAtATime",
+        "arn:aws:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deploymentconfig:CodeDeployDefault.AllAtOnce"
+      ]
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "WebAppS3" {
+  name = "WebAppS3"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Effect": "Allow",
+          "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject",
+              "s3:PutObjectAcl"
+          ],
+          "Resource": [
+              "arn:aws:s3:::${var.BUCKET_NAME}",
+              "arn:aws:s3:::${var.BUCKET_NAME}/*"
+          ]
+      }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role" "CodeDeployEC2ServiceRole" {
+  name = "CodeDeployEC2ServiceRole"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+  tags = {
+    name = "CodeDeployEC2ServiceRole"
+  }
+}
+
+resource "aws_iam_role" "CodeDeployServiceRole" {
+  name = "CodeDeployServiceRole"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "codedeploy.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+  tags = {
+    Name = "CodeDeployServiceRole"
+  }
+}
+
+data "aws_iam_role" "s3_bucket_access" {
+  name = "EC2-CSYE6225"
+}
+
+resource "aws_iam_role_policy_attachment" "Attach_CodeDeploy-EC2-S3" {
+  role       = data.aws_iam_role.s3_bucket_access.name
+  policy_arn = aws_iam_policy.CodeDeploy-EC2-S3.arn
+}
+
+resource "aws_iam_role_policy_attachment" "CodeDeployEC2ServiceRole_Attach_CodeDeploy-EC2-S3" {
+  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  policy_arn = aws_iam_policy.CodeDeploy-EC2-S3.arn
+}
+
+resource "aws_iam_role_policy_attachment" "CodeDeployServiceRole-attach-AWSCodeDeployRole" {
+  role       = "${aws_iam_role.CodeDeployServiceRole.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+}
+
+resource "aws_iam_user_policy_attachment" "Attach_GH-Upload-To-S3_to_ghactions-app" {
+  user       = aws_iam_user.ghactions.user_name
+  policy_arn = aws_iam_policy.GH-Upload-To-S3.arn
+}
+
+resource "aws_iam_user_policy_attachment" "Attach_GH-Code-Deploy_to_ghactions-app" {
+  user       = aws_iam_user.ghactions.user_name
+  policy_arn = aws_iam_policy.GH-Code-Deploy.arn
+}
+
+resource "aws_codedeploy_app" "codeDeployApp" {
+  name = var.CODE_DEPLOY_APPLICATION_NAME
+  compute_platform = "Server"
+}
+
+resource "aws_codedeploy_deployment_group" "cd_group" {
+  app_name              = aws_codedeploy_app.codeDeployApp.name
+  deployment_group_name = var.CODE_DEPLOYMENT_GROUP_NAME
+  service_role_arn      = aws_iam_role.CodeDeployServiceRole.arn
+  deployment_config_name = "CodeDeployDefault.AllAtOnce"
+
+  ec2_tag_set {
+    ec2_tag_filter {
+      key   = "Name"
+      type  = "KEY_AND_VALUE"
+      value = var.EC2_INSTANCE_NAME
+    }
+  }
+  
+  auto_rollback_configuration {
+  enabled = true
+  events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  deployment_style {
+    deployment_type   = "IN_PLACE"
+  }
+}

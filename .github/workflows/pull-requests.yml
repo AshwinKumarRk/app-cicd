@@ -24,18 +24,19 @@ jobs:
       - name: Run Unit Tests
         run: npm run test
       
-      - uses: actions/checkout@master
       - name: Archive Release
-        uses: thedoctor0/zip-release@master
-        with: 
-          type: 'zip'
-          filename: 'webApp-${{ github.run_number }}.zip'
-
-      - name: Install AWS CLI 2
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
+          npm install
+          zip -r webapp ./
+          mkdir ./codedeploy_artifact
+          zip -r webApp-${{ github.run_number}}  webapp.zip ./codedeploy/*.sh appspec.yml
+          mv  ./webApp-${{ github.run_number}}.zip ./codedeploy_artifact
+
+      # - name: Install AWS CLI 2
+      #   run: |
+      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      #     unzip awscliv2.zip
+      #     sudo ./aws/install
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -44,13 +45,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - uses: zdurham/s3-upload-github-action@master
-        env:
-          FILE: 'webapp-${{ github.run_number }}.zip'
-          AWS_REGION: 'us-east-1'
-          S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      - name: Upload artifact to s3
+        run: aws s3 sync ./codedeploy_artifact s3://${{secrets.AWS_S3_BUCKET}}
+      # - uses: zdurham/s3-upload-github-action@master
+      #   env:
+      #     FILE: 'webapp-${{ github.run_number }}.zip'
+      #     AWS_REGION: 'us-east-1'
+      #     S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
 
       - name: CodeDeploy API Call
         run: output=$(aws deploy create-deployment \

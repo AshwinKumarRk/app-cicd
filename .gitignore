@@ -1,0 +1,16 @@
+*.swp
+Gemfile.lock
+deployment/
+coverage/
+.version
+.metadata/
+RemoteSystemsTempFiles/
+codedeploy-local.log*
+codedeploy-local.*.log
+deployment/
+.idea/
+.DS_STORE
+*.iml
+pkg/
+vendor-thirdparty/
+.bundle/

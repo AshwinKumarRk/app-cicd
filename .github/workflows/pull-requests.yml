@@ -1,0 +1,68 @@
+name: Build and Deploy Artifact
+
+on:
+  push:
+    branches:
+      - main
+      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACT_NAME: webapp_v1
+      CODE_DEPLOY_APPLICATION_NAME: csye6225_webApp
+      CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME: csye6225_webApp_deployment_group
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node 
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.13.0
+
+      - name: Run Unit Tests
+        run: npm run test
+      
+      - uses: actions/checkout@master
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with: 
+          type: 'zip'
+          filename: 'webApp-${{ github.run_number }}.zip'
+
+      - name: Install AWS CLI 2
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: zdurham/s3-upload-github-action@master
+        env:
+          FILE: 'webapp-${{ github.run_number }}.zip'
+          AWS_REGION: 'us-east-1'
+          S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+
+      - name: CodeDeploy API Call
+        run: output=$(aws deploy create-deployment \
+              --application-name ${{env.CODE_DEPLOY_APPLICATION_NAME}} \
+              --deployment-config-name CodeDeployDefault.AllAtOnce
+              --deployment-group-name ${{env.CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME}} \
+              --description "CSYE6225 - CodeDeploy" \
+              --s3-location bucket=${{secrets.AWS_S3_ARTIFACT_BUCKET_NAME}},key=${{env.ARTIFACT_NAME}},bundleType=zip \
+              --region ${{secrets.AWS_REGION}} \
+              --output json)
+              echo $output
+              dID=$(echo $output | jq -r '.deploymentId')
+              aws deploy wait deployment-successful --deployment-id $dId
+
+        

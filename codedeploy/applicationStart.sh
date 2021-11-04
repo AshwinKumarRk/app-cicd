@@ -5,7 +5,6 @@
 
 sudo cd /home/ubuntu/webapp
 
-sudo cp ../webapp.zip ./
 sudo unzip webapp.zip
 sudo cp .env ./webapp
 sudo cd webapp

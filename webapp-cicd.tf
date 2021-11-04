@@ -170,25 +170,23 @@ resource "aws_codedeploy_app" "codeDeployApp" {
 }
 
 resource "aws_codedeploy_deployment_group" "cd_group" {
-  app_name              = aws_codedeploy_app.codeDeployApp.name
+  depends_on = [aws_codedeploy_app.codeDeployApp]
+  app_name               = aws_codedeploy_app.codeDeployApp.name
   deployment_group_name = var.CODE_DEPLOYMENT_GROUP_NAME
-  service_role_arn      = aws_iam_role.CodeDeployServiceRole.arn
+  service_role_arn       = aws_iam_role.CodeDeployServiceRole.arn
   deployment_config_name = "CodeDeployDefault.AllAtOnce"
-
-  ec2_tag_set {
-    ec2_tag_filter {
-      key   = "Name"
-      type  = "KEY_AND_VALUE"
-      value = var.EC2_INSTANCE_NAME
-    }
-  }
-  
-  auto_rollback_configuration {
-  enabled = true
-  events  = ["DEPLOYMENT_FAILURE"]
-  }
-
   deployment_style {
-    deployment_type   = "IN_PLACE"
+    deployment_type = "IN_PLACE"
+  }
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+  ec2_tag_set{
+    ec2_tag_filter {
+      key = "Name"
+      type = "KEY_AND_VALUE"
+      value = "webappv1"
+  }
   }
 }

@@ -47,7 +47,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload artifact to s3
-        run: aws s3 sync ./codedeploy_artifact s3://${{secrets.AWS_S3_BUCKET}}
+        run: aws s3 sync ./codedeploy_artifact s3://${{secrets.S3_BUCKET_NAME}}
       # - uses: zdurham/s3-upload-github-action@master
       #   env:
       #     FILE: 'webapp-${{ github.run_number }}.zip'

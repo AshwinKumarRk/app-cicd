@@ -5,4 +5,4 @@ unzip *.zip
 # sudo cd webapp
 npm i
 sudo npm i nodemon -g
-npm start
+npm start &

@@ -6,7 +6,7 @@ on:
       - main
       
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     env:
       ARTIFACT_NAME: webapp_v1

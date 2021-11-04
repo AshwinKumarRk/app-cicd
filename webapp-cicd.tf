@@ -192,17 +192,17 @@ resource "aws_codedeploy_deployment_group" "cd_group" {
 }
 
 data "aws_route53_zone" "current_zone" {
-  name         = "dev.ashwinkumarrk.me."
+  name         = var.dns_zone_name
 }
 data "aws_instance" "ec2_instance" {
   filter {
     name   = "tag:Name"
-    values = ["webappv1"]
+    values = [var.ec2_instance_tag]
   }
 }
 resource "aws_route53_record" "webapp_A_record" {
   zone_id = data.aws_route53_zone.current_zone.zone_id
-  name    = "dev.ashwinkumarrk.me"
+  name    = var.A_record_name
   type    = "A"
   ttl     = "60"
   records = [data.aws_instance.ec2_instance.public_ip]

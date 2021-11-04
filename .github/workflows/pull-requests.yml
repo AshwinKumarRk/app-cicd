@@ -25,7 +25,7 @@ jobs:
       - name: Run Unit Tests
         run: npm run test
       
-      - name: Archive Release
+      - name: Archive Releases
         run: |
           npm install
           zip -r webapp ./

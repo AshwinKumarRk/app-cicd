@@ -20,7 +20,10 @@ resource "aws_iam_policy" "CodeDeploy-EC2-S3" {
                 "s3:List*"
             ],
             "Effect": "Allow",
-            "Resource": "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}/*"
+            "Resource": [
+            "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}",
+            "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}/*"]
+            
         }
     ]
 }
@@ -38,11 +41,12 @@ resource "aws_iam_user_policy" "GH-Upload-To-S3" {
         {
             "Effect": "Allow",
             "Action": [
-                "s3:PutObject",
-                "s3:Get*",
-                "s3:List*"
+              "s3:PutObject",
+              "s3:Get*",
+              "s3:List*"
             ],
             "Resource": [
+            "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}",
                 "arn:aws:s3:::${var.CODE_DEPLOY_S3_BUCKET_NAME}/*"
             ]
         }

@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ARTIFACT_NAME: webapp_v1
-      CODE_DEPLOY_APPLICATION_NAME: csye6225_webApp
-      CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME: csye6225_webApp_deployment_group
+      CODE_DEPLOY_APPLICATION_NAME: csye6225-webapp
+      CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME: csye6225-webapp-deployment
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2

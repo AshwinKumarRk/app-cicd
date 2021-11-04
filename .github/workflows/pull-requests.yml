@@ -48,13 +48,6 @@ jobs:
 
       - name: Upload artifact to s3
         run: aws s3 sync ./codedeploy_artifact s3://${{secrets.S3_BUCKET_NAME}}
-      # - uses: zdurham/s3-upload-github-action@master
-      #   env:
-      #     FILE: 'webapp-${{ github.run_number }}.zip'
-      #     AWS_REGION: 'us-east-1'
-      #     S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
 
       - name: CodeDeploy API Call
         run: output=$(aws deploy create-deployment --application-name ${{env.CODE_DEPLOY_APPLICATION_NAME}} --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name ${{env.CODEDEPLOY_APPLICATION_DEPLOYMENT_GROUP_NAME}} --description "CSYE6225 - CodeDeploy" --s3-location bucket=${{secrets.S3_BUCKET_NAME}},key=${{env.ARTIFACT_NAME}}.zip,bundleType=zip --region ${{secrets.AWS_REGION}} --output json)

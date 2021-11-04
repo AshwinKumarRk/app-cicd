@@ -190,3 +190,20 @@ resource "aws_codedeploy_deployment_group" "cd_group" {
   }
   }
 }
+
+data "aws_route53_zone" "current_zone" {
+  name         = "dev.ashwinkumarrk.me."
+}
+data "aws_instance" "ec2_instance" {
+  filter {
+    name   = "tag:Name"
+    values = ["webappv1"]
+  }
+}
+resource "aws_route53_record" "webapp_A_record" {
+  zone_id = data.aws_route53_zone.current_zone.zone_id
+  name    = "dev.ashwinkumarrk.me"
+  type    = "A"
+  ttl     = "60"
+  records = [data.aws_instance.ec2_instance.public_ip]
+}

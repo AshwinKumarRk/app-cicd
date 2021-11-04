@@ -6,6 +6,6 @@
 sudo cd /home/ubuntu/webapp
 
 sudo unzip webapp.zip
-sudo cp .env ./webapp
-sudo cd webapp
+# sudo cp .env ./webapp
+# sudo cd webapp
 sudo npm start

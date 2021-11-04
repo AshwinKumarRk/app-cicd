@@ -97,30 +97,6 @@ resource "aws_iam_user_policy" "GH-Code-Deploy" {
 EOF
 }
 
-resource "aws_iam_policy" "WebAppS3" {
-  name = "WebAppS3"
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-      {
-          "Effect": "Allow",
-          "Action": [
-              "s3:PutObject",
-              "s3:GetObject",
-              "s3:DeleteObject",
-              "s3:PutObjectAcl"
-          ],
-          "Resource": [
-              "arn:aws:s3:::${var.BUCKET_NAME}",
-              "arn:aws:s3:::${var.BUCKET_NAME}/*"
-          ]
-      }
-  ]
-}
-EOF
-}
-
 resource "aws_iam_role" "CodeDeployEC2ServiceRole" {
   name = "CodeDeployEC2ServiceRole"
   assume_role_policy = <<EOF
@@ -182,16 +158,6 @@ resource "aws_iam_role_policy_attachment" "CodeDeployEC2ServiceRole_Attach_CodeD
 resource "aws_iam_role_policy_attachment" "CodeDeployServiceRole-attach-AWSCodeDeployRole" {
   role       = "${aws_iam_role.CodeDeployServiceRole.name}"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
-}
-
-resource "aws_iam_user_policy_attachment" "Attach_GH-Upload-To-S3_to_ghactions-app" {
-  user       = aws_iam_user.ghactions.user_name
-  policy_arn = aws_iam_policy.GH-Upload-To-S3.arn
-}
-
-resource "aws_iam_user_policy_attachment" "Attach_GH-Code-Deploy_to_ghactions-app" {
-  user       = aws_iam_user.ghactions.user_name
-  policy_arn = aws_iam_policy.GH-Code-Deploy.arn
 }
 
 resource "aws_codedeploy_app" "codeDeployApp" {

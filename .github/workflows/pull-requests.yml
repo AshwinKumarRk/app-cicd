@@ -30,8 +30,8 @@ jobs:
           npm install
           zip -r webapp ./
           mkdir ./codedeploy_artifact
-          zip -r ${{ARTIFACT_NAME}}  webapp.zip ./codedeploy/*.sh appspec.yml
-          mv  ./${{ARTIFACT_NAME}}.zip ./codedeploy_artifact
+          zip -r ${{env.ARTIFACT_NAME}}  webapp.zip ./codedeploy/*.sh appspec.yml
+          mv  ./${{env.ARTIFACT_NAME}}.zip ./codedeploy_artifact
 
       # - name: Install AWS CLI 2
       #   run: |

@@ -21,5 +21,7 @@ jobs:
         with:
           node-version: 16.13.0
 
+      - run:
+         npm install
       - name: Run Unit Tests
         run: npm run test

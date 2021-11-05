@@ -1,5 +1,5 @@
 variable "profile" {
-    default = "dev"
+    default = "prod"
 }
 
 variable "region" {

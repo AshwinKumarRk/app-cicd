@@ -3,7 +3,7 @@ os: linux
 
 files:
   - source: webapp.zip
-    destination: /home/ubuntu/webapp
+    destination: /home/ubuntu
 
 hooks:
     

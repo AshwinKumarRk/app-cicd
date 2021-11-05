@@ -1,3 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 # cd /home/ubuntu/webapp/
 # sudo killall node

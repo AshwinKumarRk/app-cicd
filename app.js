@@ -15,7 +15,7 @@ app.listen(process.env.PORT || 3000, () => {
     console.log("Connected");
 })
 
-app.use('/v1/users', userRoute)
-app.use('/v1/users', fileRoute)
+app.use('/v2/users', userRoute)
+app.use('/v2/users', fileRoute)
 
 db.sequelize.sync();

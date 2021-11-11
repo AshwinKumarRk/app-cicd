@@ -49,5 +49,3 @@ deployment/
 pkg/
 vendor-thirdparty/
 .bundle/
-
-node_modules

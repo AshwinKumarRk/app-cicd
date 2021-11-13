@@ -164,6 +164,10 @@ resource "aws_iam_role_policy_attachment" "CodeDeployServiceRole-attach-AWSCodeD
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
 }
 
+data "aws_autoscaling_group" "asg"{
+  name = "asg"
+}
+
 resource "aws_codedeploy_app" "codeDeployApp" {
   name = var.CODE_DEPLOY_APPLICATION_NAME
   compute_platform = "Server"
@@ -175,6 +179,7 @@ resource "aws_codedeploy_deployment_group" "cd_group" {
   deployment_group_name = var.CODE_DEPLOYMENT_GROUP_NAME
   service_role_arn       = aws_iam_role.CodeDeployServiceRole.arn
   deployment_config_name = "CodeDeployDefault.AllAtOnce"
+  autoscaling_groups     = [data.aws_autoscaling_group.asg.name]
   deployment_style {
     deployment_type = "IN_PLACE"
   }

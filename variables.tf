@@ -1,13 +1,13 @@
 variable "profile" {
-    default = "prod"
+  default = "prod"
 }
 
 variable "region" {
-    default = "us-east-1"
+  default = "us-east-1"
 }
 
 variable "dns_zone_name" {}
-variable "ec2_instance_tag" {} 
+variable "ec2_instance_tag" {}
 variable "A_record_name" {}
 
 variable "EC2_INSTANCE_NAME" {}

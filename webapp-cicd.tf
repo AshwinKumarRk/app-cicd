@@ -1,6 +1,6 @@
 provider "aws" {
-    profile = var.profile 
-    region = var.region
+  profile = var.profile
+  region  = var.region
 }
 
 data "aws_iam_user" "ghactions" {
@@ -32,7 +32,7 @@ EOF
 
 resource "aws_iam_user_policy" "GH-Upload-To-S3" {
   name = "GH-Upload-To-S3"
-  user = "${data.aws_iam_user.ghactions.user_name}"
+  user = data.aws_iam_user.ghactions.user_name
 
   policy = <<EOF
 {
@@ -59,7 +59,7 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_iam_user_policy" "GH-Code-Deploy" {
   name = "GH-Code-Deploy"
-  user = "${data.aws_iam_user.ghactions.user_name}"
+  user = data.aws_iam_user.ghactions.user_name
 
   policy = <<EOF
 {
@@ -102,7 +102,7 @@ EOF
 }
 
 resource "aws_iam_role" "CodeDeployEC2ServiceRole" {
-  name = "CodeDeployEC2ServiceRole"
+  name               = "CodeDeployEC2ServiceRole"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -124,7 +124,7 @@ EOF
 }
 
 resource "aws_iam_role" "CodeDeployServiceRole" {
-  name = "CodeDeployServiceRole"
+  name               = "CodeDeployServiceRole"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -155,26 +155,35 @@ resource "aws_iam_role_policy_attachment" "Attach_CodeDeploy-EC2-S3" {
 }
 
 resource "aws_iam_role_policy_attachment" "CodeDeployEC2ServiceRole_Attach_CodeDeploy-EC2-S3" {
-  role       = "${aws_iam_role.CodeDeployEC2ServiceRole.name}"
+  role       = aws_iam_role.CodeDeployEC2ServiceRole.name
   policy_arn = aws_iam_policy.CodeDeploy-EC2-S3.arn
 }
 
 resource "aws_iam_role_policy_attachment" "CodeDeployServiceRole-attach-AWSCodeDeployRole" {
-  role       = "${aws_iam_role.CodeDeployServiceRole.name}"
+  role       = aws_iam_role.CodeDeployServiceRole.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
 }
 
+data "aws_autoscaling_group" "asg" {
+  name = "asg"
+}
+
+data "aws_lb" "load_balancer" {
+  name = "Application-Load-Balancer"
+}
+
 resource "aws_codedeploy_app" "codeDeployApp" {
-  name = var.CODE_DEPLOY_APPLICATION_NAME
+  name             = var.CODE_DEPLOY_APPLICATION_NAME
   compute_platform = "Server"
 }
 
 resource "aws_codedeploy_deployment_group" "cd_group" {
-  depends_on = [aws_codedeploy_app.codeDeployApp]
+  depends_on             = [aws_codedeploy_app.codeDeployApp]
   app_name               = aws_codedeploy_app.codeDeployApp.name
-  deployment_group_name = var.CODE_DEPLOYMENT_GROUP_NAME
+  deployment_group_name  = var.CODE_DEPLOYMENT_GROUP_NAME
   service_role_arn       = aws_iam_role.CodeDeployServiceRole.arn
   deployment_config_name = "CodeDeployDefault.AllAtOnce"
+  autoscaling_groups     = [data.aws_autoscaling_group.asg.name]
   deployment_style {
     deployment_type = "IN_PLACE"
   }
@@ -182,28 +191,33 @@ resource "aws_codedeploy_deployment_group" "cd_group" {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE"]
   }
-  ec2_tag_set{
+  ec2_tag_set {
     ec2_tag_filter {
-      key = "Name"
-      type = "KEY_AND_VALUE"
+      key   = "Name"
+      type  = "KEY_AND_VALUE"
       value = "webappv1"
-  }
+    }
   }
 }
 
 data "aws_route53_zone" "current_zone" {
-  name         = var.dns_zone_name
+  name = var.dns_zone_name
 }
-data "aws_instance" "ec2_instance" {
-  filter {
-    name   = "tag:Name"
-    values = [var.ec2_instance_tag]
-  }
-}
+// data "aws_instance" "ec2_instance" {
+//   filter {
+//     name   = "tag:Name"
+//     values = [var.ec2_instance_tag]
+//   }
+// }
 resource "aws_route53_record" "webapp_A_record" {
   zone_id = data.aws_route53_zone.current_zone.zone_id
   name    = var.A_record_name
   type    = "A"
-  ttl     = "60"
-  records = [data.aws_instance.ec2_instance.public_ip]
+  alias {
+    name                   = data.aws_lb.load_balancer.dns_name
+    zone_id                = data.aws_lb.load_balancer.zone_id
+    evaluate_target_health = true
+  }
+  // ttl     = "60"
+  // records = [data.aws_instance.ec2_instance.public_ip]
 }

@@ -203,12 +203,7 @@ resource "aws_codedeploy_deployment_group" "cd_group" {
 data "aws_route53_zone" "current_zone" {
   name = var.dns_zone_name
 }
-// data "aws_instance" "ec2_instance" {
-//   filter {
-//     name   = "tag:Name"
-//     values = [var.ec2_instance_tag]
-//   }
-// }
+
 resource "aws_route53_record" "webapp_A_record" {
   zone_id = data.aws_route53_zone.current_zone.zone_id
   name    = var.A_record_name
